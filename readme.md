@@ -34,7 +34,7 @@ import "github.com/bmharper/cimg"
 // Resize from bytes
 func resizeImage(srcWidth, srcHeight int, rgba []byte, dstWidth, dstHeight int) *cimg.Image {
 	src := cimg.WrapImage(srcWidth, srcHeight, 4, rgba)
-	return cimg.ResizeEasy(src, dstWidth, dstHeight)
+	return cimg.ResizeNew(src, dstWidth, dstHeight)
 }
 ```
 

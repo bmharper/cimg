@@ -6,9 +6,17 @@ package cimg
 import "C"
 import "unsafe"
 
-// ResizeEasy allocates the output image for you and returns it
+// ResizeNew allocates the output image for you and returns it
 // Assumes sRGB image
-func ResizeEasy(src *Image, dstWidth, dstHeight int) *Image {
+func ResizeNew(src *Image, dstWidth, dstHeight int) *Image {
+	dst := NewImage(dstWidth, dstHeight, src.NChan)
+	Resize(src, dst)
+	return dst
+}
+
+// Resize resizes an image into a destination buffer that you provide
+// Assumes sRGB image
+func Resize(src, dst *Image) {
 	/*
 		STBIRDEF int stbir_resize(         const void *input_pixels , int input_w , int input_h , int input_stride_in_bytes,
 		                                         void *output_pixels, int output_w, int output_h, int output_stride_in_bytes,
@@ -19,8 +27,6 @@ func ResizeEasy(src *Image, dstWidth, dstHeight int) *Image {
 		                                   stbir_colorspace space, void *alloc_context);
 
 	*/
-	dst := NewImage(dstWidth, dstHeight, src.NChan)
-
 	C.stbir_resize(
 		unsafe.Pointer(&src.Pixels[0]), C.int(src.Width), C.int(src.Height), C.int(src.Stride),
 		unsafe.Pointer(&dst.Pixels[0]), C.int(dst.Width), C.int(dst.Height), C.int(dst.Stride),
@@ -29,6 +35,4 @@ func ResizeEasy(src *Image, dstWidth, dstHeight int) *Image {
 		C.STBIR_EDGE_CLAMP, C.STBIR_EDGE_CLAMP,
 		C.STBIR_FILTER_MITCHELL, C.STBIR_FILTER_MITCHELL,
 		C.STBIR_COLORSPACE_SRGB, C.NULL)
-
-	return dst
 }

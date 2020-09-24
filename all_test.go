@@ -56,8 +56,8 @@ func TestResize(t *testing.T) {
 	w := 700
 	h := 400
 	org := MakeRGBA(w, h)
-	small := ResizeEasy(org, w/3, h/3)
-	big := ResizeEasy(org, w*2, h*2)
+	small := ResizeNew(org, w/3, h/3)
+	big := ResizeNew(org, w*2, h*2)
 	SaveJPEG(t, org, "test/resize-org.jpg")
 	SaveJPEG(t, small, "test/resize-small.jpg")
 	SaveJPEG(t, big, "test/resize-big.jpg")
@@ -69,6 +69,6 @@ func BenchmarkResize(b *testing.B) {
 	h := 3456
 	org := MakeRGBA(w, h)
 	for i := 0; i < b.N; i++ {
-		ResizeEasy(org, 1200, 800)
+		ResizeNew(org, 1200, 800)
 	}
 }
