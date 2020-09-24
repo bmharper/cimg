@@ -58,6 +58,7 @@ func makeError(handler C.tjhandle, returnVal C.int) error {
 	return fmt.Errorf("turbojpeg error: %v", str)
 }
 
+// CompressParams are the TurboJPEG compression parameters
 type CompressParams struct {
 	PixelFormat PixelFormat
 	Sampling    Sampling
@@ -65,6 +66,7 @@ type CompressParams struct {
 	Flags       Flags
 }
 
+// MakeCompressParams returns a fully populated CompressParams struct
 func MakeCompressParams(pixelFormat PixelFormat, sampling Sampling, quality int, flags Flags) CompressParams {
 	return CompressParams{
 		PixelFormat: pixelFormat,
@@ -74,6 +76,7 @@ func MakeCompressParams(pixelFormat PixelFormat, sampling Sampling, quality int,
 	}
 }
 
+// Compress compresses an image using TurboJPEG
 func Compress(img *Image, params CompressParams) ([]byte, error) {
 	encoder := C.tjInitCompress()
 	defer C.tjDestroy(encoder)
@@ -99,6 +102,8 @@ func Compress(img *Image, params CompressParams) ([]byte, error) {
 	return enc, nil
 }
 
+// Decompress decompresses a JPEG image using TurboJPEG
+// The resulting image is RGBA (Alpha channel contents is undefined)
 func Decompress(encoded []byte) (*Image, error) {
 	decoder := C.tjInitDecompress()
 	defer C.tjDestroy(decoder)

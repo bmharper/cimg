@@ -1,9 +1,15 @@
-# CImg (Native C++ image library wrappers for Go)
+# C++ image library bindings for Go
 
-CImg is a Go wrapper for various C/C++ image libraries, including:
+`cimg` is a Go wrapper for various C/C++ image libraries, including:
 
 * TurboJPEG
 * stb_image_resize
+
+Why?
+
+There are a host of high-performance C/C++ libraries out there for
+image manipulation, and it's near impossible to write the same kind
+of code in Go.
 
 ### Example: Compress/Decompress with TurboJPEG
 
@@ -40,6 +46,6 @@ func resizeImage(srcWidth, srcHeight int, rgba []byte, dstWidth, dstHeight int) 
 
 ### C/C++ compiler optimizations
 I was initially worried that I needed to add the directive `#cgo CXXFLAGS: -O2`, but it looks like
-CGo compiles with optimizations on by default. You can verify this by adding `#cgo CXXFLAGS: -O0`
+`cgo` compiles with optimizations on by default. You can verify this by adding `#cgo CXXFLAGS: -O0`
 to `resize.go`, and run `go test -bench=.`. Compare with `-O0` and `-O2` and there should be
 a big difference. Removing the comment entirely should give similar performance to `-O2`.
