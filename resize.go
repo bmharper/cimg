@@ -4,7 +4,10 @@ package cimg
 #include "stb_image_resize.h"
 */
 import "C"
-import "unsafe"
+import (
+	"errors"
+	"unsafe"
+)
 
 // ResizeNew allocates the output image for you and returns it
 // Assumes sRGB image
@@ -16,7 +19,10 @@ func ResizeNew(src *Image, dstWidth, dstHeight int) *Image {
 
 // Resize resizes an image into a destination buffer that you provide
 // Assumes sRGB image
-func Resize(src, dst *Image) {
+func Resize(src, dst *Image) error {
+	if dst.Width == 0 || dst.Height == 0 {
+		return errors.New("Image target dimensions must be non-zero")
+	}
 	/*
 		STBIRDEF int stbir_resize(         const void *input_pixels , int input_w , int input_h , int input_stride_in_bytes,
 		                                         void *output_pixels, int output_w, int output_h, int output_stride_in_bytes,
@@ -27,7 +33,7 @@ func Resize(src, dst *Image) {
 		                                   stbir_colorspace space, void *alloc_context);
 
 	*/
-	C.stbir_resize(
+	res := C.stbir_resize(
 		unsafe.Pointer(&src.Pixels[0]), C.int(src.Width), C.int(src.Height), C.int(src.Stride),
 		unsafe.Pointer(&dst.Pixels[0]), C.int(dst.Width), C.int(dst.Height), C.int(dst.Stride),
 		C.STBIR_TYPE_UINT8,
@@ -35,4 +41,9 @@ func Resize(src, dst *Image) {
 		C.STBIR_EDGE_CLAMP, C.STBIR_EDGE_CLAMP,
 		C.STBIR_FILTER_MITCHELL, C.STBIR_FILTER_MITCHELL,
 		C.STBIR_COLORSPACE_SRGB, C.NULL)
+
+	if res == 0 {
+		return errors.New("Image resize failed")
+	}
+	return nil
 }

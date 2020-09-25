@@ -4,6 +4,7 @@
 
 * TurboJPEG
 * stb_image_resize
+* libexif (exif is gratuitous here - you could just as well use one of the native Go exif libraries)
 
 Why?
 
@@ -49,3 +50,11 @@ I was initially worried that I needed to add the directive `#cgo CXXFLAGS: -O2`,
 `cgo` compiles with optimizations on by default. You can verify this by adding `#cgo CXXFLAGS: -O0`
 to `resize.go`, and run `go test -bench=.`. Compare with `-O0` and `-O2` and there should be
 a big difference. Removing the comment entirely should give similar performance to `-O2`.
+
+### System requirements
+I have only tested this on Ubuntu 20.04 `amd64`.
+
+To install the necessary packages:
+```
+apt install libexif-dev libturbojpeg0-dev
+```

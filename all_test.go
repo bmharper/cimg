@@ -63,6 +63,16 @@ func TestResize(t *testing.T) {
 	SaveJPEG(t, big, "test/resize-big.jpg")
 }
 
+func TestExif(t *testing.T) {
+	enc, err := ioutil.ReadFile("test/rotated270.jpg")
+	assert.Nil(t, err)
+	exif, err := LoadExif(enc)
+	assert.Nil(t, err)
+	defer exif.Close()
+	assert.Equal(t, exif.GetOrientation(), 8)
+	t.Logf("Orientation: %v", exif.GetOrientation())
+}
+
 // On my Skylake 6700K, I get 242ms for resizing 5184x3456 to 1200x800
 func BenchmarkResize(b *testing.B) {
 	w := 5184
