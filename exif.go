@@ -4,7 +4,7 @@ package cimg
 #cgo LDFLAGS: -lexif
 #include <libexif/exif-data.h>
 
-inline int GetExifShort(ExifData* ed, int tag, int* val) {
+int GetExifShort(ExifData* ed, int tag, int* val) {
 	ExifByteOrder byteOrder = exif_data_get_byte_order(ed);
 	ExifEntry* ee = exif_data_get_entry(ed, tag);
 	if (ee) {
