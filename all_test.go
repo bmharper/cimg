@@ -2,6 +2,7 @@ package cimg
 
 import (
 	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -71,6 +72,44 @@ func TestExif(t *testing.T) {
 	defer exif.Close()
 	assert.Equal(t, exif.GetOrientation(), 8)
 	t.Logf("Orientation: %v", exif.GetOrientation())
+}
+
+func LoadJPEG(t *testing.T, filename string) (img *Image, exifOrientation int) {
+	buf, err := os.ReadFile(filename)
+	assert.Nil(t, err)
+	img, err = Decompress(buf)
+	assert.Nil(t, err)
+	exif, err := LoadExif(buf)
+	assert.Nil(t, err)
+	exifOrientation = exif.GetOrientation()
+	return img, exifOrientation
+}
+
+func Unrotate(t *testing.T, orient int, img *Image) *Image {
+	unrot, err := UnrotateExif(orient, img)
+	assert.Nil(t, err)
+	return unrot
+}
+
+func UnrotateFile(t *testing.T, filename string) {
+	img, orient := LoadJPEG(t, filename)
+	SaveJPEG(t, Unrotate(t, orient, img), filename+"-unrotated.jpg")
+}
+
+func TestUnrotate(t *testing.T) {
+	w := 50
+	h := 20
+	org := MakeRGBA(w, h)
+	SaveJPEG(t, org, "test/unrotated-0.jpg")
+	SaveJPEG(t, Unrotate(t, 3, org), "test/unrotated-3.jpg")
+	SaveJPEG(t, Unrotate(t, 6, org), "test/unrotated-6.jpg")
+	SaveJPEG(t, Unrotate(t, 8, org), "test/unrotated-8.jpg")
+	// I don't want to commit these files because they're all 20k because
+	// of their bulky EXIF data, and I can't figure out an easy way to
+	// remove all the EXIF data except for the orientation.
+	//UnrotateFile(t, "test/onceoff-1.jpg")
+	//UnrotateFile(t, "test/onceoff-2.jpg")
+	//UnrotateFile(t, "test/onceoff-3.jpg")
 }
 
 // On my Skylake 6700K, I get 242ms for resizing 5184x3456 to 1200x800

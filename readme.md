@@ -4,7 +4,8 @@
 
 * TurboJPEG
 * stb_image_resize
-* libexif (exif is gratuitous here - you could just as well use one of the native Go exif libraries)
+* libexif (EXIF is gratuitous here - you could just as well use one of the native Go EXIF libraries)
+* Unrotate image so that natural encoding orientation is same as display orientation
 
 Why?
 
@@ -58,3 +59,7 @@ To install the necessary packages:
 ```
 apt install libexif-dev libturbojpeg0-dev
 ```
+
+### Testing
+Warning! Many of the Go unit tests don't actually validate their results. Instead, they
+simply write out a JPEG file into the `test` directory. It's your job to visually see that they look correct.
