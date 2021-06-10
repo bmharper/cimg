@@ -2,10 +2,10 @@
 
 `cimg` is a Go wrapper for various C/C++ image libraries, including:
 
-* TurboJPEG
+* libjpeg-turbo
 * stb_image_resize
-* libexif (EXIF is gratuitous here - you could just as well use one of the native Go EXIF libraries)
 * Unrotate image so that natural encoding orientation is same as display orientation
+* Reading and writing EXIF orientation (provided via native Go code)
 
 Why?
 
@@ -34,6 +34,25 @@ func decompressImage(jpg []byte) (*Image, error) {
 }
 ```
 
+### Example: Read and Modify EXIF Orientation
+
+```go
+import "github.com/bmharper/cimg"
+
+func inspectOrientation(jpgRaw []byte) {
+	// Parse JPEG/JFIF segments, and read EXIF Orientation tag
+	jpgExif, err = cimg.LoadExif(jpgRaw)
+	fmt.Printf("Orientation: %v\n", jpgExif.GetOrientation())
+
+	// Modify EXIF rotation.
+	// If the file contains no EXIF data, then this will create an
+	// EXIF "segment".
+	err = jpgExif.SetOrientation(3)
+	out := bytes.Buffer{}
+	err = jpgExif.Save(&out)
+}
+```
+
 ### Example: Resize with stb_image_resize
 
 ```go
@@ -57,7 +76,7 @@ I have only tested this on Ubuntu 20.04 `amd64`.
 
 To install the necessary packages:
 ```
-apt install libexif-dev libturbojpeg0-dev
+apt install libturbojpeg0-dev
 ```
 
 ### Testing

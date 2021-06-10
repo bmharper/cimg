@@ -1,6 +1,7 @@
 package cimg
 
 import (
+	"bytes"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -64,14 +65,56 @@ func TestResize(t *testing.T) {
 	SaveJPEG(t, big, "test/resize-big.jpg")
 }
 
-func TestExif(t *testing.T) {
+// Read EXIF data from a known good JPEG file
+func TestReadExif(t *testing.T) {
 	enc, err := ioutil.ReadFile("test/rotated270.jpg")
 	assert.Nil(t, err)
 	exif, err := LoadExif(enc)
 	assert.Nil(t, err)
-	defer exif.Close()
 	assert.Equal(t, exif.GetOrientation(), 8)
 	t.Logf("Orientation: %v", exif.GetOrientation())
+}
+
+// Test the whole cycle of creating EXIF data from scratch
+func TestReadModifyWriteExif(t *testing.T) {
+	// Test a JPEG with no EXIF data
+	raw1 := MakeRGBA(20, 20)
+	params := MakeCompressParams(PixelFormatRGBA, Sampling444, 90, 0)
+	jpg, err := Compress(raw1, params)
+	assert.Nil(t, err)
+	jpgExif, err := LoadExif(jpg)
+	assert.Nil(t, err)
+	assert.Equal(t, jpgExif.GetOrientation(), 0)
+
+	// Add orientation to a JPEG without any EXIF data
+	err = jpgExif.SetOrientation(6)
+	assert.Nil(t, err)
+	// Unfortunately this doesn't work, because the reader and writer interfaces are diferent
+	// assert.Equal(t, exif.GetOrientation(), 6)
+
+	// We need to save the file first...
+	buf := bytes.Buffer{}
+	err = jpgExif.Save(&buf)
+	assert.Nil(t, err)
+	raw2 := buf.Bytes()
+
+	// Finally, if we reload the file, then we get a good orientation tag
+	jpgExif, err = LoadExif(raw2)
+	assert.Nil(t, err)
+	assert.Equal(t, jpgExif.GetOrientation(), 6)
+
+	// Test modifying existing EXIF data
+	err = jpgExif.SetOrientation(3)
+	assert.Nil(t, err)
+	buf = bytes.Buffer{}
+	err = jpgExif.Save(&buf)
+	assert.Nil(t, err)
+	raw3 := buf.Bytes()
+
+	// reload and verify
+	jpgExif, err = LoadExif(raw3)
+	assert.Nil(t, err)
+	assert.Equal(t, jpgExif.GetOrientation(), 3)
 }
 
 func LoadJPEG(t *testing.T, filename string) (img *Image, exifOrientation int) {
