@@ -155,6 +155,31 @@ func TestUnrotate(t *testing.T) {
 	//UnrotateFile(t, "test/onceoff-3.jpg")
 }
 
+func TestAvgColor(t *testing.T) {
+	img1 := MakeRGBA(200, 100)
+	avg := img1.AvgColor()
+	assert.Equal(t, 4, len(avg))
+	assert.EqualValues(t, 115, avg[0])
+	assert.EqualValues(t, 49, avg[1])
+	assert.EqualValues(t, 127, avg[2])
+	assert.EqualValues(t, 255, avg[3])
+	t.Logf("AvgColor img1: %v", avg)
+	for y := 0; y < img1.Height; y++ {
+		for x := 0; x < img1.Width; x++ {
+			img1.Pixels[y*img1.Stride+x*4] = 0
+			img1.Pixels[y*img1.Stride+x*4+1] = 5
+			img1.Pixels[y*img1.Stride+x*4+2] = 6
+			img1.Pixels[y*img1.Stride+x*4+3] = 7
+		}
+	}
+	avg = img1.AvgColor()
+	t.Logf("AvgColor img1: %v", avg)
+	assert.EqualValues(t, 0, avg[0])
+	assert.EqualValues(t, 5, avg[1])
+	assert.EqualValues(t, 6, avg[2])
+	assert.EqualValues(t, 7, avg[3])
+}
+
 // On my Skylake 6700K, I get 242ms for resizing 5184x3456 to 1200x800
 func BenchmarkResize(b *testing.B) {
 	w := 5184
