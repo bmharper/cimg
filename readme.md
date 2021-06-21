@@ -18,14 +18,14 @@ of code in Go.
 ```go
 import "github.com/bmharper/cimg"
 
-func compressImage(width, height int, rgba []byte) {
+func compressImage(width, height int, rgb []byte) {
 	raw := cimg.Image{
 		Width: width,
 		Height: height,
-		Stride: width * 4,
-		Pixels: rgba,
+		Stride: width * 3,
+		Pixels: rgb,
 	}
-	params := cimg.MakeCompressParams(cimg.PixelFormatRGBA, cimg.Sampling420, 35, 0)
+	params := cimg.MakeCompressParams(cimg.PixelFormatRGB, cimg.Sampling420, 35, 0)
 	jpg, err := cimg.Compress(&raw, params)
 }
 

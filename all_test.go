@@ -32,6 +32,37 @@ func MakeRGBA(width, height int) *Image {
 	return img
 }
 
+func MakeRGB(width, height int) *Image {
+	img := NewImage(width, height, 3)
+	buf := img.Pixels
+	g := byte(0)
+	b := byte(0)
+	p := 0
+	for y := 0; y < height; y++ {
+		r := byte(0)
+		for x := 0; x < width; x++ {
+			buf[p] = r
+			buf[p+1] = g
+			buf[p+2] = b
+			r += 3
+			b += 5
+			p += 3
+		}
+		g += 1
+	}
+	return img
+}
+
+func MakeImage(nchan, width, height int) *Image {
+	if nchan == 3 {
+		return MakeRGB(width, height)
+	} else if nchan == 4 {
+		return MakeRGBA(width, height)
+	} else {
+		panic("Bad channel count")
+	}
+}
+
 func SaveJPEG(t *testing.T, img *Image, filename string) {
 	enc, err := Compress(img, MakeCompressParams(PixelFormatRGBA, Sampling444, 95, 0))
 	assert.Equal(t, err, nil)
@@ -41,28 +72,36 @@ func SaveJPEG(t *testing.T, img *Image, filename string) {
 func TestCompress(t *testing.T) {
 	w := 300
 	h := 200
-	raw1 := MakeRGBA(w, h)
-	params := MakeCompressParams(PixelFormatRGBA, Sampling444, 90, 0)
-	jpg, err := Compress(raw1, params)
-	t.Logf("Encode return: %v, %v", len(jpg), err)
-	raw2, err := Decompress(jpg)
-	t.Logf("Decode return: %v x %v, %v, %v, %v", raw2.Width, raw2.Height, raw2.Stride, len(raw2.Pixels), err)
-	assert.Equal(t, &w, &raw2.Width, "Width same")
-	assert.Equal(t, &h, &raw2.Height, "Height same")
-	assert.Equal(t, &raw1.Stride, &raw2.Stride, "Stride same")
-	//ioutil.WriteFile("test.jpg", jpg, 0660)
+	for nchan := 3; nchan <= 4; nchan++ {
+		raw1 := MakeImage(nchan, w, h)
+		pixelFormat := PixelFormatRGBA
+		if nchan == 3 {
+			pixelFormat = PixelFormatRGB
+		}
+		params := MakeCompressParams(pixelFormat, Sampling444, 90, 0)
+		jpg, err := Compress(raw1, params)
+		t.Logf("Encode return: %v, %v", len(jpg), err)
+		raw2, err := Decompress(jpg)
+		t.Logf("Decode return: %v x %v, %v, %v, %v", raw2.Width, raw2.Height, raw2.Stride, len(raw2.Pixels), err)
+		assert.Equal(t, &w, &raw2.Width, "Width same")
+		assert.Equal(t, &h, &raw2.Height, "Height same")
+		assert.Equal(t, w*3, raw2.Stride, "Stride")
+		//ioutil.WriteFile("test.jpg", jpg, 0660)
+	}
 }
 
 // This isn't much of a unit test - but at least the code gets run
 func TestResize(t *testing.T) {
 	w := 700
 	h := 400
-	org := MakeRGBA(w, h)
-	small := ResizeNew(org, w/3, h/3)
-	big := ResizeNew(org, w*2, h*2)
-	SaveJPEG(t, org, "test/resize-org.jpg")
-	SaveJPEG(t, small, "test/resize-small.jpg")
-	SaveJPEG(t, big, "test/resize-big.jpg")
+	for nchan := 3; nchan <= 4; nchan++ {
+		org := MakeImage(nchan, w, h)
+		small := ResizeNew(org, w/3, h/3)
+		big := ResizeNew(org, w*2, h*2)
+		SaveJPEG(t, org, "test/resize-org.jpg")
+		SaveJPEG(t, small, "test/resize-small.jpg")
+		SaveJPEG(t, big, "test/resize-big.jpg")
+	}
 }
 
 // Read EXIF data from a known good JPEG file
@@ -180,11 +219,21 @@ func TestAvgColor(t *testing.T) {
 	assert.EqualValues(t, 7, avg[3])
 }
 
-// On my Skylake 6700K, I get 242ms for resizing 5184x3456 to 1200x800
-func BenchmarkResize(b *testing.B) {
+// On my Skylake 6700K, I get 305ms for resizing 5184x3456 to 1200x800
+func BenchmarkResizeRGBA(b *testing.B) {
 	w := 5184
 	h := 3456
 	org := MakeRGBA(w, h)
+	for i := 0; i < b.N; i++ {
+		ResizeNew(org, 1200, 800)
+	}
+}
+
+// On my Skylake 6700K, I get 191ms for resizing 5184x3456 to 1200x800
+func BenchmarkResizeRGB(b *testing.B) {
+	w := 5184
+	h := 3456
+	org := MakeRGB(w, h)
 	for i := 0; i < b.N; i++ {
 		ResizeNew(org, 1200, 800)
 	}

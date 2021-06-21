@@ -103,7 +103,7 @@ func Compress(img *Image, params CompressParams) ([]byte, error) {
 }
 
 // Decompress decompresses a JPEG image using TurboJPEG
-// The resulting image is RGBA (Alpha channel contents is undefined)
+// The resulting image is RGB
 func Decompress(encoded []byte) (*Image, error) {
 	decoder := C.tjInitDecompress()
 	defer C.tjDestroy(decoder)
@@ -118,12 +118,12 @@ func Decompress(encoded []byte) (*Image, error) {
 		return nil, err
 	}
 
-	outBuf := make([]byte, width*height*4)
-	stride := C.int(width * 4)
+	outBuf := make([]byte, width*height*3)
+	stride := C.int(width * 3)
 
 	// int tjDecompress2(tjhandle handle, const unsigned char *jpegBuf, unsigned long jpegSize, unsigned char *dstBuf,
 	// int width, int pitch, int height, int pixelFormat, int flags);
-	err = makeError(decoder, C.tjDecompress2(decoder, (*C.uchar)(&encoded[0]), C.ulong(len(encoded)), (*C.uchar)(&outBuf[0]), width, stride, height, C.int(PixelFormatRGBA), 0))
+	err = makeError(decoder, C.tjDecompress2(decoder, (*C.uchar)(&encoded[0]), C.ulong(len(encoded)), (*C.uchar)(&outBuf[0]), width, stride, height, C.int(PixelFormatRGB), 0))
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +132,7 @@ func Decompress(encoded []byte) (*Image, error) {
 		Width:  int(width),
 		Height: int(height),
 		Stride: int(stride),
-		NChan:  4,
+		NChan:  3,
 		Pixels: outBuf,
 	}
 	return img, nil

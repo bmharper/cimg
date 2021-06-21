@@ -6,6 +6,7 @@ package cimg
 import "C"
 import (
 	"errors"
+	"fmt"
 	"unsafe"
 )
 
@@ -23,6 +24,14 @@ func Resize(src, dst *Image) error {
 	if dst.Width == 0 || dst.Height == 0 {
 		return errors.New("Image target dimensions must be non-zero")
 	}
+	alphaChannel := C.STBIR_ALPHA_CHANNEL_NONE
+	if src.NChan == 4 {
+		alphaChannel = 3
+	}
+	if src.NChan != dst.NChan {
+		return fmt.Errorf("Source channel count %v differs from target channel count %v", src.NChan, dst.NChan)
+	}
+
 	/*
 		STBIRDEF int stbir_resize(         const void *input_pixels , int input_w , int input_h , int input_stride_in_bytes,
 		                                         void *output_pixels, int output_w, int output_h, int output_stride_in_bytes,
@@ -37,10 +46,10 @@ func Resize(src, dst *Image) error {
 		unsafe.Pointer(&src.Pixels[0]), C.int(src.Width), C.int(src.Height), C.int(src.Stride),
 		unsafe.Pointer(&dst.Pixels[0]), C.int(dst.Width), C.int(dst.Height), C.int(dst.Stride),
 		C.STBIR_TYPE_UINT8,
-		C.int(src.NChan), C.STBIR_ALPHA_CHANNEL_NONE, 0,
+		C.int(src.NChan), C.int(alphaChannel), 0,
 		C.STBIR_EDGE_CLAMP, C.STBIR_EDGE_CLAMP,
 		C.STBIR_FILTER_MITCHELL, C.STBIR_FILTER_MITCHELL,
-		C.STBIR_COLORSPACE_SRGB, C.NULL)
+		C.STBIR_COLORSPACE_LINEAR, C.NULL)
 
 	if res == 0 {
 		return errors.New("Image resize failed")
