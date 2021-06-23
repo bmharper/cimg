@@ -64,7 +64,11 @@ func MakeImage(nchan, width, height int) *Image {
 }
 
 func SaveJPEG(t *testing.T, img *Image, filename string) {
-	enc, err := Compress(img, MakeCompressParams(PixelFormatRGBA, Sampling444, 95, 0))
+	format := PixelFormatRGBA
+	if img.NChan == 3 {
+		format = PixelFormatRGB
+	}
+	enc, err := Compress(img, MakeCompressParams(format, Sampling444, 95, 0))
 	assert.Equal(t, err, nil)
 	ioutil.WriteFile(filename, enc, 0660)
 }
@@ -102,6 +106,16 @@ func TestResize(t *testing.T) {
 		SaveJPEG(t, small, "test/resize-small.jpg")
 		SaveJPEG(t, big, "test/resize-big.jpg")
 	}
+}
+
+func TestCopyImage(t *testing.T) {
+	w := 700
+	h := 400
+	nchan := 3
+	org := MakeImage(nchan, w, h)
+	new := MakeImage(nchan, 800, 500)
+	org.CopyImageRect(new, 320, 200, 480, 230, 10, 20)
+	SaveJPEG(t, org, "test/copyimage.jpg")
 }
 
 // Read EXIF data from a known good JPEG file
