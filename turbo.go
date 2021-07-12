@@ -7,7 +7,9 @@ package cimg
 import "C"
 
 import (
+	"bytes"
 	"fmt"
+	"image/png"
 	"unsafe"
 )
 
@@ -102,9 +104,13 @@ func Compress(img *Image, params CompressParams) ([]byte, error) {
 	return enc, nil
 }
 
-// Decompress decompresses a JPEG image using TurboJPEG
-// The resulting image is RGB
+// Decompress decompresses a JPEG image using TurboJPEG, or PNG image using Go's native PNG library
+// The resulting image is RGB for JPEGs, or RGBA for PNG
 func Decompress(encoded []byte) (*Image, error) {
+	if len(encoded) > 8 && bytes.Compare(encoded[:8], []byte("\x89\x50\x4e\x47\x0d\x0a\x1a\x0a")) == 0 {
+		return decompressPNG(encoded)
+	}
+
 	decoder := C.tjInitDecompress()
 	defer C.tjDestroy(decoder)
 
@@ -136,4 +142,12 @@ func Decompress(encoded []byte) (*Image, error) {
 		Pixels: outBuf,
 	}
 	return img, nil
+}
+
+func decompressPNG(encoded []byte) (*Image, error) {
+	img, err := png.Decode(bytes.NewReader(encoded))
+	if err != nil {
+		return nil, err
+	}
+	return FromImage(img, true)
 }
