@@ -89,3 +89,45 @@ func FromImage(src image.Image, allowDeepClone bool) (*Image, error) {
 		return dst
 	*/
 }
+
+// ToImage returns an image from the Go standard library 'image' package
+func (img *Image) ToImage() image.Image {
+	if img.NChan == 3 {
+		dst := image.NewRGBA(image.Rect(0, 0, img.Width, img.Height))
+		srcBuf := img.Pixels
+		dstBuf := dst.Pix
+		width := img.Width
+		for y := 0; y < img.Height; y++ {
+			srcP := img.Stride * y
+			dstP := dst.Stride * y
+			for x := 0; x < width; x++ {
+				dstBuf[dstP] = srcBuf[srcP]
+				dstBuf[dstP+1] = srcBuf[srcP+1]
+				dstBuf[dstP+2] = srcBuf[srcP+2]
+				dstBuf[dstP+3] = 255
+				srcP += 3
+				dstP += 4
+			}
+		}
+		return dst
+	} else if img.NChan == 4 {
+		dst := image.NewNRGBA(image.Rect(0, 0, img.Width, img.Height))
+		srcBuf := img.Pixels
+		dstBuf := dst.Pix
+		for y := 0; y < img.Height; y++ {
+			srcP := img.Stride * y
+			dstP := dst.Stride * y
+			copy(dstBuf[dstP:dstP+dst.Stride], srcBuf[srcP:srcP+img.Stride])
+		}
+		return dst
+	} else {
+		return nil
+	}
+}
+
+// Clone returns a deep clone of the image
+func (img *Image) Clone() *Image {
+	copy := NewImage(img.Width, img.Height, img.NChan)
+	copy.CopyImage(img, 0, 0)
+	return copy
+}

@@ -2,6 +2,7 @@ package cimg
 
 import (
 	"bytes"
+	"image/png"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -63,6 +64,40 @@ func MakeImage(nchan, width, height int) *Image {
 	}
 }
 
+func intAbs(v int) int {
+	if v < 0 {
+		return -v
+	}
+	return v
+}
+
+func AvgRGBDifference(img1, img2 *Image) float64 {
+	if img1.Width != img2.Width || img1.Height != img2.Height {
+		return 1e9
+	}
+	dr := 0
+	dg := 0
+	db := 0
+	for y := 0; y < img1.Height; y++ {
+		p1 := y * img1.Stride
+		p2 := y * img2.Stride
+		inc1 := img1.NChan
+		inc2 := img2.NChan
+		for x := 0; x < img1.Width; x++ {
+			r := intAbs(int(img1.Pixels[p1]) - int(img2.Pixels[p2]))
+			g := intAbs(int(img1.Pixels[p1+1]) - int(img2.Pixels[p2+1]))
+			b := intAbs(int(img1.Pixels[p1+2]) - int(img2.Pixels[p2+2]))
+			dr += r
+			dg += g
+			db += b
+			p1 += inc1
+			p2 += inc2
+		}
+	}
+	npix := img1.Width * img1.Height
+	return float64(dr+dg+db) / float64(npix)
+}
+
 func SaveJPEG(t *testing.T, img *Image, filename string) {
 	format := PixelFormatRGBA
 	if img.NChan == 3 {
@@ -116,6 +151,27 @@ func TestCopyImage(t *testing.T) {
 	new := MakeImage(nchan, 800, 500)
 	org.CopyImageRect(new, 320, 200, 480, 230, 10, 20)
 	SaveJPEG(t, org, "test/copyimage.jpg")
+}
+
+func TestPNGLoad(t *testing.T) {
+	for nchan := 3; nchan <= 4; nchan++ {
+		org := MakeImage(nchan, 200, 100)
+		nat := org.ToImage()
+		buf := bytes.Buffer{}
+		err := png.Encode(&buf, nat)
+		assert.Nil(t, err)
+		v2, err := Decompress(buf.Bytes())
+		assert.Nil(t, err)
+		diff := AvgRGBDifference(org, v2)
+		assert.Equal(t, 0.0, diff)
+	}
+}
+
+func TestToRGB(t *testing.T) {
+	rgba := MakeImage(4, 200, 100)
+	rgb := rgba.ToRGB()
+	diff := AvgRGBDifference(rgba, rgb)
+	assert.Equal(t, 0.0, diff)
 }
 
 // Read EXIF data from a known good JPEG file

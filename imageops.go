@@ -22,8 +22,8 @@ func (img *Image) AvgColor() []uint8 {
 }
 
 // CopyImage copies src into dst at the location dstX1, dstY1
-func (dst *Image) CopyImage(src *Image, dstX1, dstY1 int) {
-	dst.CopyImageRect(src, 0, 0, src.Width, src.Height, dstX1, dstY1)
+func (dst *Image) CopyImage(src *Image, dstX1, dstY1 int) error {
+	return dst.CopyImageRect(src, 0, 0, src.Width, src.Height, dstX1, dstY1)
 }
 
 func min(a, b int) int {
@@ -76,4 +76,16 @@ func (dst *Image) CopyImageRect(src *Image, srcX1, srcY1, srcX2, srcY2 int, dstX
 		copy(dst.Pixels[dstP:dstP+bytesPerLine], src.Pixels[srcP:srcP+bytesPerLine])
 	}
 	return nil
+}
+
+// ToRGB returns a 3 channel image.
+// This is used to remove the alpha channel from an image that was loaded from a PNG.
+// If the image is already a 3 channel image, then a clone is returned
+func (img *Image) ToRGB() *Image {
+	if img.NChan == 3 {
+		return img.Clone()
+	}
+	dst := NewImage(img.Width, img.Height, 3)
+	C.ToRGB(unsafe.Pointer(&img.Pixels[0]), C.int(img.Width), C.int(img.Height), C.int(img.Stride), C.int(img.NChan), C.int(dst.Stride), unsafe.Pointer(&dst.Pixels[0]))
+	return dst
 }
