@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"image/png"
 	"io/ioutil"
+	"math"
 	"os"
 	"testing"
 
@@ -54,8 +55,25 @@ func MakeRGB(width, height int) *Image {
 	return img
 }
 
+func MakeGray(width, height int) *Image {
+	img := NewImage(width, height, 1)
+	buf := img.Pixels
+	g := byte(0)
+	p := 0
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			buf[p] = g
+			g += 3
+		}
+		g += 30
+	}
+	return img
+}
+
 func MakeImage(nchan, width, height int) *Image {
-	if nchan == 3 {
+	if nchan == 1 {
+		return MakeGray(width, height)
+	} else if nchan == 3 {
 		return MakeRGB(width, height)
 	} else if nchan == 4 {
 		return MakeRGBA(width, height)
@@ -78,6 +96,7 @@ func AvgRGBDifference(img1, img2 *Image) float64 {
 	dr := 0
 	dg := 0
 	db := 0
+	isGray := img1.NChan == 1
 	for y := 0; y < img1.Height; y++ {
 		p1 := y * img1.Stride
 		p2 := y * img2.Stride
@@ -85,8 +104,12 @@ func AvgRGBDifference(img1, img2 *Image) float64 {
 		inc2 := img2.NChan
 		for x := 0; x < img1.Width; x++ {
 			r := intAbs(int(img1.Pixels[p1]) - int(img2.Pixels[p2]))
-			g := intAbs(int(img1.Pixels[p1+1]) - int(img2.Pixels[p2+1]))
-			b := intAbs(int(img1.Pixels[p1+2]) - int(img2.Pixels[p2+2]))
+			g := 0
+			b := 0
+			if !isGray {
+				g = intAbs(int(img1.Pixels[p1+1]) - int(img2.Pixels[p2+1]))
+				b = intAbs(int(img1.Pixels[p1+2]) - int(img2.Pixels[p2+2]))
+			}
 			dr += r
 			dg += g
 			db += b
@@ -154,7 +177,8 @@ func TestCopyImage(t *testing.T) {
 }
 
 func TestPNGLoad(t *testing.T) {
-	for nchan := 3; nchan <= 4; nchan++ {
+	chans := []int{1, 3, 4}
+	for _, nchan := range chans {
 		org := MakeImage(nchan, 200, 100)
 		nat := org.ToImage()
 		buf := bytes.Buffer{}
@@ -162,6 +186,7 @@ func TestPNGLoad(t *testing.T) {
 		assert.Nil(t, err)
 		v2, err := Decompress(buf.Bytes())
 		assert.Nil(t, err)
+		// assert.Equal(t, org.NChan, v2.NChan) -- not true, because Go PNG lib opens RGB images as RGBA
 		diff := AvgRGBDifference(org, v2)
 		assert.Equal(t, 0.0, diff)
 	}

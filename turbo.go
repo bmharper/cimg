@@ -86,6 +86,11 @@ func Compress(img *Image, params CompressParams) ([]byte, error) {
 	var outBuf *C.uchar
 	var outBufSize C.ulong
 
+	if params.PixelFormat == PixelFormatGRAY {
+		// This is the only valid sampling, so just fix it up if the user forgot to set it
+		params.Sampling = SamplingGray
+	}
+
 	// int tjCompress2(tjhandle handle, const unsigned char *srcBuf, int width, int pitch, int height, int pixelFormat,
 	// unsigned char **jpegBuf, unsigned long *jpegSize, int jpegSubsamp, int jpegQual, int flags);
 	res := C.tjCompress2(encoder, (*C.uchar)(&img.Pixels[0]), C.int(img.Width), C.int(img.Stride), C.int(img.Height), C.int(params.PixelFormat),
@@ -105,7 +110,7 @@ func Compress(img *Image, params CompressParams) ([]byte, error) {
 }
 
 // Decompress decompresses a JPEG image using TurboJPEG, or PNG image using Go's native PNG library
-// The resulting image is RGB for JPEGs, or RGBA for PNG
+// The resulting image is RGB for JPEGs, or RGBA/Gray for PNG
 func Decompress(encoded []byte) (*Image, error) {
 	if len(encoded) > 8 && bytes.Compare(encoded[:8], []byte("\x89\x50\x4e\x47\x0d\x0a\x1a\x0a")) == 0 {
 		return decompressPNG(encoded)

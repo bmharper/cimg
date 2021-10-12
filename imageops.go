@@ -79,7 +79,8 @@ func (dst *Image) CopyImageRect(src *Image, srcX1, srcY1, srcX2, srcY2 int, dstX
 }
 
 // ToRGB returns a 3 channel image.
-// This is used to remove the alpha channel from an image that was loaded from a PNG.
+// This is used to remove the alpha channel from an image that was loaded from a PNG,
+// or to turn a gray image into an RGB image.
 // If the image is already a 3 channel image, then a clone is returned
 func (img *Image) ToRGB() *Image {
 	if img.NChan == 3 {
