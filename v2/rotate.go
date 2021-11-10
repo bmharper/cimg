@@ -21,7 +21,7 @@ func UnrotateExif(exifOrientation int, src *Image) (*Image, error) {
 	if exifOrientation == 6 || exifOrientation == 8 {
 		dstWidth, dstHeight = src.Height, src.Width
 	}
-	dst := NewImage(dstWidth, dstHeight, src.NChan)
-	C.Unrotate(C.int(exifOrientation), unsafe.Pointer(&src.Pixels[0]), C.int(src.Width), C.int(src.Height), C.int(src.Stride), C.int(src.NChan), unsafe.Pointer(&dst.Pixels[0]))
+	dst := NewImage(dstWidth, dstHeight, src.Format)
+	C.Unrotate(C.int(exifOrientation), unsafe.Pointer(&src.Pixels[0]), C.int(src.Width), C.int(src.Height), C.int(src.Stride), C.int(src.NChan()), unsafe.Pointer(&dst.Pixels[0]))
 	return dst, nil
 }

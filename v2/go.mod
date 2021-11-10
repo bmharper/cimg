@@ -1,4 +1,4 @@
-module github.com/bmharper/cimg
+module github.com/bmharper/cimg/v2
 
 go 1.16
 

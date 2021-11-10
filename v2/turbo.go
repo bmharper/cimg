@@ -62,19 +62,17 @@ func makeError(handler C.tjhandle, returnVal C.int) error {
 
 // CompressParams are the TurboJPEG compression parameters
 type CompressParams struct {
-	PixelFormat PixelFormat
-	Sampling    Sampling
-	Quality     int // 1 .. 100
-	Flags       Flags
+	Sampling Sampling
+	Quality  int // 1 .. 100
+	Flags    Flags
 }
 
 // MakeCompressParams returns a fully populated CompressParams struct
-func MakeCompressParams(pixelFormat PixelFormat, sampling Sampling, quality int, flags Flags) CompressParams {
+func MakeCompressParams(sampling Sampling, quality int, flags Flags) CompressParams {
 	return CompressParams{
-		PixelFormat: pixelFormat,
-		Sampling:    sampling,
-		Quality:     quality,
-		Flags:       flags,
+		Sampling: sampling,
+		Quality:  quality,
+		Flags:    flags,
 	}
 }
 
@@ -86,14 +84,14 @@ func Compress(img *Image, params CompressParams) ([]byte, error) {
 	var outBuf *C.uchar
 	var outBufSize C.ulong
 
-	if params.PixelFormat == PixelFormatGRAY {
-		// This is the only valid sampling, so just fix it up if the user forgot to set it
+	if img.Format == PixelFormatGRAY {
+		// This is the only valid sampling, so just fix it up if the user screwed it up
 		params.Sampling = SamplingGray
 	}
 
 	// int tjCompress2(tjhandle handle, const unsigned char *srcBuf, int width, int pitch, int height, int pixelFormat,
 	// unsigned char **jpegBuf, unsigned long *jpegSize, int jpegSubsamp, int jpegQual, int flags);
-	res := C.tjCompress2(encoder, (*C.uchar)(&img.Pixels[0]), C.int(img.Width), C.int(img.Stride), C.int(img.Height), C.int(params.PixelFormat),
+	res := C.tjCompress2(encoder, (*C.uchar)(&img.Pixels[0]), C.int(img.Width), C.int(img.Stride), C.int(img.Height), C.int(img.Format),
 		&outBuf, &outBufSize, C.int(params.Sampling), C.int(params.Quality), C.int(params.Flags))
 
 	var enc []byte
@@ -131,10 +129,11 @@ func Decompress(encoded []byte) (*Image, error) {
 
 	outBuf := make([]byte, width*height*3)
 	stride := C.int(width * 3)
+	outFormat := PixelFormatRGB
 
 	// int tjDecompress2(tjhandle handle, const unsigned char *jpegBuf, unsigned long jpegSize, unsigned char *dstBuf,
 	// int width, int pitch, int height, int pixelFormat, int flags);
-	err = makeError(decoder, C.tjDecompress2(decoder, (*C.uchar)(&encoded[0]), C.ulong(len(encoded)), (*C.uchar)(&outBuf[0]), width, stride, height, C.int(PixelFormatRGB), 0))
+	err = makeError(decoder, C.tjDecompress2(decoder, (*C.uchar)(&encoded[0]), C.ulong(len(encoded)), (*C.uchar)(&outBuf[0]), width, stride, height, C.int(outFormat), 0))
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +142,7 @@ func Decompress(encoded []byte) (*Image, error) {
 		Width:  int(width),
 		Height: int(height),
 		Stride: int(stride),
-		NChan:  3,
+		Format: outFormat,
 		Pixels: outBuf,
 	}
 	return img, nil

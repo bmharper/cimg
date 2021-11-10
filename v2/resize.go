@@ -13,7 +13,7 @@ import (
 // ResizeNew allocates the output image for you and returns it
 // Assumes sRGB image
 func ResizeNew(src *Image, dstWidth, dstHeight int) *Image {
-	dst := NewImage(dstWidth, dstHeight, src.NChan)
+	dst := NewImage(dstWidth, dstHeight, src.Format)
 	Resize(src, dst)
 	return dst
 }
@@ -25,11 +25,11 @@ func Resize(src, dst *Image) error {
 		return errors.New("Image target dimensions must be non-zero")
 	}
 	alphaChannel := C.STBIR_ALPHA_CHANNEL_NONE
-	if src.NChan == 4 {
+	if src.NChan() == 4 {
 		alphaChannel = 3
 	}
-	if src.NChan != dst.NChan {
-		return fmt.Errorf("Source channel count %v differs from target channel count %v", src.NChan, dst.NChan)
+	if src.NChan() != dst.NChan() {
+		return fmt.Errorf("Source channel count %v differs from target channel count %v", src.NChan(), dst.NChan())
 	}
 
 	/*
@@ -46,7 +46,7 @@ func Resize(src, dst *Image) error {
 		unsafe.Pointer(&src.Pixels[0]), C.int(src.Width), C.int(src.Height), C.int(src.Stride),
 		unsafe.Pointer(&dst.Pixels[0]), C.int(dst.Width), C.int(dst.Height), C.int(dst.Stride),
 		C.STBIR_TYPE_UINT8,
-		C.int(src.NChan), C.int(alphaChannel), 0,
+		C.int(src.NChan()), C.int(alphaChannel), 0,
 		C.STBIR_EDGE_CLAMP, C.STBIR_EDGE_CLAMP,
 		C.STBIR_FILTER_MITCHELL, C.STBIR_FILTER_MITCHELL,
 		C.STBIR_COLORSPACE_LINEAR, C.NULL)
