@@ -212,25 +212,25 @@ func TestMatte(t *testing.T) {
 	SaveJPEG(t, rgba, "test/alpha1.jpg")
 
 	white := rgba.Clone()
-	err := white.Matte(255, 255, 255)
-	require.Nil(t, err)
+	white.Matte(255, 255, 255)
 	SaveJPEG(t, white, "test/alphaWhiteMatte.jpg")
 
 	black := rgba.Clone()
-	err = black.Matte(0, 0, 0)
-	require.Nil(t, err)
+	black.Matte(0, 0, 0)
 	SaveJPEG(t, black, "test/alphaBlackMatte.jpg")
 
 	green := rgba.Clone()
-	err = green.Matte(0, 255, 0)
-	require.Nil(t, err)
+	green.Matte(0, 255, 0)
 	SaveJPEG(t, green, "test/alphaGreenMatteGoodPremul.jpg")
 
 	green = rgba.Clone()
 	green.Premultiplied = true // This is a lie
-	err = green.Matte(0, 255, 0)
-	require.Nil(t, err)
+	green.Matte(0, 255, 0)
 	SaveJPEG(t, green, "test/alphaGreenMatteBadPremul.jpg")
+
+	// invalid on RGB
+	rgb := MakeImage(3, 200, 200)
+	rgb.Matte(0, 255, 0)
 }
 
 func TestToRGB(t *testing.T) {

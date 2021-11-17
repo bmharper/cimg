@@ -5,9 +5,12 @@ package cimg
 */
 import "C"
 import (
+	"errors"
 	"fmt"
 	"unsafe"
 )
+
+var ErrNoAlpha = errors.New("Image has no alpha channel")
 
 // AvgColor computes the average color of the entire image, per channel
 // The averaging is performed in sRGB space (i.e. not linear light)
@@ -95,18 +98,20 @@ func (img *Image) ToRGB() *Image {
 
 // For an RGBA image, blend it on top of the given color, so that transparent regions of the image
 // will be filled with the given color.
-// Returns an error if the image is not RGBA format
-func (img *Image) Matte(r, g, b uint8) error {
+// If the image has no alpha channel, then this is a no-op.
+func (img *Image) Matte(r, g, b uint8) {
+	if img.NChan() != 4 {
+		return
+	}
 	premul := 0
 	if img.Premultiplied {
 		premul = 1
 	}
 	C.Matte(unsafe.Pointer(&img.Pixels[0]), C.int(img.Width), C.int(img.Height), C.int(img.Stride), C.int(img.Format), C.int(premul), C.uint8_t(r), C.uint8_t(g), C.uint8_t(b))
-	return nil
 }
 
 // Premultiply RGB by A.
-// If the image does not have an alpha channel, or if Premultiplied=true then this is a no-op
+// If the image does not have an alpha channel, or if Premultiplied=true then this is a no-op.
 func (img *Image) Premultiply() {
 	if img.Premultiplied || img.NChan() != 4 {
 		return
