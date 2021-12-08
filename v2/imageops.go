@@ -1,6 +1,7 @@
 package cimg
 
 /*
+#cgo darwin CPPFLAGS: -I/usr/local/opt/jpeg-turbo/include
 #include "imageops.h"
 */
 import "C"

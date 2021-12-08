@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include <malloc.h>
+#include <string.h>
 #include <turbojpeg.h>
 #include "imageops.h"
 

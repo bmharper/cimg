@@ -1,6 +1,10 @@
 package cimg
 
+// The darwin cgo paths assume you've installed jpeg-turbo using homebrew
+
 /*
+#cgo darwin CFLAGS: -I/usr/local/opt/jpeg-turbo/include
+#cgo darwin LDFLAGS: -L/usr/local/opt/jpeg-turbo/lib
 #cgo LDFLAGS: -lturbojpeg
 #include <turbojpeg.h>
 */
