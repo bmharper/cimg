@@ -83,7 +83,7 @@ func WrapImageStrided(width, height int, format PixelFormat, pixels []byte, stri
 	}
 }
 
-// Convert a Go image.Image into a turbo.Image
+// Convert a Go image.Image into a cimg.Image
 // If allowDeepClone is true, and the source image is type GRAY, NRGBA, or RGBA,
 // then the resulting Image points directly to the pixel buffer of the source image.
 func FromImage(src image.Image, allowDeepClone bool) (*Image, error) {

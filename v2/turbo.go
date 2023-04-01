@@ -13,7 +13,6 @@ import "C"
 import (
 	"bytes"
 	"fmt"
-	"image/png"
 	"unsafe"
 )
 
@@ -111,9 +110,15 @@ func Compress(img *Image, params CompressParams) ([]byte, error) {
 	return enc, nil
 }
 
-// Decompress decompresses a JPEG image using TurboJPEG, or PNG image using Go's native PNG library
+// Load an image into memory.
+// JPEG: Uses TurboJPEG
+// PNG: Uses Go's native PNG library
+// TIFF: Uses golang.org/x/image/tiff
 // The resulting image is RGB for JPEGs, or RGBA/Gray for PNG
 func Decompress(encoded []byte) (*Image, error) {
+	if len(encoded) > 4 && bytes.Compare(encoded[:4], []byte("II*\x00")) == 0 {
+		return decompressTIFF(encoded)
+	}
 	if len(encoded) > 8 && bytes.Compare(encoded[:8], []byte("\x89\x50\x4e\x47\x0d\x0a\x1a\x0a")) == 0 {
 		return decompressPNG(encoded)
 	}
@@ -150,12 +155,4 @@ func Decompress(encoded []byte) (*Image, error) {
 		Pixels: outBuf,
 	}
 	return img, nil
-}
-
-func decompressPNG(encoded []byte) (*Image, error) {
-	img, err := png.Decode(bytes.NewReader(encoded))
-	if err != nil {
-		return nil, err
-	}
-	return FromImage(img, true)
 }
