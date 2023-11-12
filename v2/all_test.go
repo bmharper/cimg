@@ -135,7 +135,7 @@ func AvgRGBDifference(img1, img2 *Image) float64 {
 func SaveJPEG(t *testing.T, img *Image, filename string) {
 	enc, err := Compress(img, MakeCompressParams(Sampling444, 95, 0))
 	require.Equal(t, err, nil)
-	ioutil.WriteFile(filename, enc, 0660)
+	os.WriteFile(filename, enc, 0660)
 }
 
 func TestCompress(t *testing.T) {
