@@ -161,8 +161,8 @@ func TestResize(t *testing.T) {
 	h := 400
 	for nchan := 3; nchan <= 4; nchan++ {
 		org := MakeImage(nchan, w, h)
-		small := ResizeNew(org, w/3, h/3)
-		big := ResizeNew(org, w*2, h*2)
+		small := ResizeNew(org, w/3, h/3, nil)
+		big := ResizeNew(org, w*2, h*2, nil)
 		SaveJPEG(t, org, "test/resize-org.jpg")
 		SaveJPEG(t, small, "test/resize-small.jpg")
 		SaveJPEG(t, big, "test/resize-big.jpg")
@@ -361,16 +361,29 @@ func BenchmarkResizeRGBA(b *testing.B) {
 	h := 3456
 	org := MakeRGBA(w, h)
 	for i := 0; i < b.N; i++ {
-		ResizeNew(org, 1200, 800)
+		ResizeNew(org, 1200, 800, nil)
 	}
 }
 
 // On my Skylake 6700K, I get 191ms for resizing 5184x3456 to 1200x800
-func BenchmarkResizeRGB(b *testing.B) {
+func BenchmarkResizeRGBDown(b *testing.B) {
 	w := 5184
 	h := 3456
 	org := MakeRGB(w, h)
 	for i := 0; i < b.N; i++ {
-		ResizeNew(org, 1200, 800)
+		ResizeNew(org, 1200, 800, nil)
+	}
+}
+
+func BenchmarkResizeRGBUp(b *testing.B) {
+	w := 320
+	h := 240
+	org := MakeRGB(w, h)
+	params := ResizeParams{
+		Filter:          ResizeFilterBox,
+		CheapSRGBFilter: true,
+	}
+	for i := 0; i < b.N; i++ {
+		ResizeNew(org, 640, 640, &params)
 	}
 }
