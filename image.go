@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"os"
 )
 
 // Image is the concrete image type that is used by all functions inside cimg
@@ -259,4 +260,20 @@ func (img *Image) Clone() *Image {
 // NChan returns the number of channels of the pixel format of the image
 func (img *Image) NChan() int {
 	return NChan(img.Format)
+}
+
+func ReadFile(filename string) (*Image, error) {
+	raw, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+	return Decompress(raw)
+}
+
+func (img *Image) WriteJPEG(filename string, params CompressParams, perm os.FileMode) error {
+	raw, err := Compress(img, params)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filename, raw, 0644)
 }

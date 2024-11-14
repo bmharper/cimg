@@ -13,7 +13,6 @@ import "C"
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"unsafe"
 )
 
@@ -156,12 +155,4 @@ func Decompress(encoded []byte) (*Image, error) {
 		Pixels: outBuf,
 	}
 	return img, nil
-}
-
-func ReadFile(filename string) (*Image, error) {
-	raw, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
-	return Decompress(raw)
 }
