@@ -118,6 +118,30 @@ void AvgColor(void* _src, int _width, int _height, int stride, int _nchan, void*
 	}
 }
 
+// _src is either RGB or RGBA
+void ToGray(void* _src, int _width, int height, int srcStride, int _nchan, int dstStride, void* _out) {
+	auto src = (const uint8_t*) _src;
+	auto dst = (uint8_t*) _out;
+	for (int y = 0; y < height; y++) {
+		size_t width = _width;
+		size_t nchan = _nchan;
+		auto   srcP  = src;
+		auto   dstP  = dst;
+		if (nchan >= 3) {
+			for (size_t x = 0; x < width; x++) {
+				auto r  = srcP[0];
+				auto g  = srcP[1];
+				auto b  = srcP[2];
+				dstP[0] = r * 77 + g * 150 + b * 29 >> 8;
+				srcP += nchan;
+				dstP++;
+			}
+		}
+		src += srcStride;
+		dst += dstStride;
+	}
+}
+
 // _src is either RGBA or G
 void ToRGB(void* _src, int _width, int height, int srcStride, int _nchan, int dstStride, void* _out) {
 	auto src = (const uint8_t*) _src;
@@ -143,6 +167,40 @@ void ToRGB(void* _src, int _width, int height, int srcStride, int _nchan, int ds
 				dstP[2] = srcP[2];
 				srcP += nchan;
 				dstP += 3;
+			}
+		}
+		src += srcStride;
+		dst += dstStride;
+	}
+}
+
+// _src is either RGB or G
+void ToRGBA(void* _src, int _width, int height, int srcStride, int _nchan, int dstStride, uint8_t alpha, void* _out) {
+	auto src = (const uint8_t*) _src;
+	auto dst = (uint8_t*) _out;
+	for (int y = 0; y < height; y++) {
+		size_t width = _width;
+		size_t nchan = _nchan;
+		auto   srcP  = src;
+		auto   dstP  = dst;
+		if (nchan == 1) {
+			for (size_t x = 0; x < width; x++) {
+				auto g  = srcP[0];
+				dstP[0] = g;
+				dstP[1] = g;
+				dstP[2] = g;
+				dstP[3] = alpha;
+				srcP++;
+				dstP += 4;
+			}
+		} else if (nchan == 3) {
+			for (size_t x = 0; x < width; x++) {
+				dstP[0] = srcP[0];
+				dstP[1] = srcP[1];
+				dstP[2] = srcP[2];
+				dstP[3] = alpha;
+				srcP += nchan;
+				dstP += 4;
 			}
 		}
 		src += srcStride;

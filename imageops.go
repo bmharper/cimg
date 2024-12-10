@@ -30,25 +30,11 @@ func (dst *Image) CopyImage(src *Image, dstX1, dstY1 int) error {
 	return dst.CopyImageRect(src, 0, 0, src.Width, src.Height, dstX1, dstY1)
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func max(a, b int) int {
-	if a < b {
-		return b
-	}
-	return a
-}
-
-func clamp(v, min, max int) int {
-	if v < min {
-		return min
-	} else if v > max {
-		return max
+func clamp(v, vmin, vmax int) int {
+	if v < vmin {
+		return vmin
+	} else if v > vmax {
+		return vmax
 	}
 	return v
 }
@@ -84,6 +70,17 @@ func (dst *Image) CopyImageRect(src *Image, srcX1, srcY1, srcX2, srcY2 int, dstX
 	return nil
 }
 
+// ToGray returns a grayscale image.
+// If the image is already a grayscale image, then a clone is returned
+func (img *Image) ToGray() *Image {
+	if img.NChan() == 1 {
+		return img.Clone()
+	}
+	dst := NewImage(img.Width, img.Height, PixelFormatGRAY)
+	C.ToGray(unsafe.Pointer(&img.Pixels[0]), C.int(img.Width), C.int(img.Height), C.int(img.Stride), C.int(img.NChan()), C.int(dst.Stride), unsafe.Pointer(&dst.Pixels[0]))
+	return dst
+}
+
 // ToRGB returns a 3 channel image.
 // This is used to remove the alpha channel from an image that was loaded from a PNG,
 // or to turn a gray image into an RGB image.
@@ -94,6 +91,17 @@ func (img *Image) ToRGB() *Image {
 	}
 	dst := NewImage(img.Width, img.Height, PixelFormatRGB)
 	C.ToRGB(unsafe.Pointer(&img.Pixels[0]), C.int(img.Width), C.int(img.Height), C.int(img.Stride), C.int(img.NChan()), C.int(dst.Stride), unsafe.Pointer(&dst.Pixels[0]))
+	return dst
+}
+
+// ToRGBA returns a 4 channel image.
+// If the image is already a 4 channel image, then a clone is returned
+func (img *Image) ToRGBA(alpha uint8) *Image {
+	if img.NChan() == 4 {
+		return img.Clone()
+	}
+	dst := NewImage(img.Width, img.Height, PixelFormatRGBA)
+	C.ToRGBA(unsafe.Pointer(&img.Pixels[0]), C.int(img.Width), C.int(img.Height), C.int(img.Stride), C.int(img.NChan()), C.int(dst.Stride), C.uint8_t(alpha), unsafe.Pointer(&dst.Pixels[0]))
 	return dst
 }
 
