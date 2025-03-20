@@ -30,6 +30,12 @@ func (dst *Image) CopyImage(src *Image, dstX1, dstY1 int) error {
 	return dst.CopyImageRect(src, 0, 0, src.Width, src.Height, dstX1, dstY1)
 }
 
+// Return a crop of the image, where the crop points to the same underlying bytes
+func (img *Image) ReferenceCrop(x1, y1, x2, y2 int) *Image {
+	pixels := img.Pixels[y1*img.Stride+x1*img.NChan() : y2*img.Stride+x2*img.NChan()]
+	return WrapImageStrided(x2-x1, y2-y1, img.Format, pixels, img.Stride)
+}
+
 func clamp(v, vmin, vmax int) int {
 	if v < vmin {
 		return vmin

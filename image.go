@@ -12,7 +12,7 @@ type Image struct {
 	Pixels        []byte
 	Width         int
 	Height        int
-	Stride        int
+	Stride        int // Distance from one line to the next, in bytes
 	Format        PixelFormat
 	Premultiplied bool
 }
@@ -276,4 +276,8 @@ func (img *Image) WriteJPEG(filename string, params CompressParams, perm os.File
 		return err
 	}
 	return os.WriteFile(filename, raw, 0644)
+}
+
+func (img *Image) PixelByte(x, y int) int {
+	return img.Stride*y + x*img.NChan()
 }

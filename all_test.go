@@ -355,6 +355,18 @@ func TestAvgColor(t *testing.T) {
 	require.EqualValues(t, 7, avg[3])
 }
 
+func TestCrop(t *testing.T) {
+	i1 := MakeRGBA(101, 95)
+	i2 := i1.ReferenceCrop(5, 6, 60, 70)
+	require.NotEqual(t, byte(123), i1.Pixels[i1.PixelByte(5, 6)])
+	// Modify a pixel on i2, and make sure that the change also occurs on i1
+	i2.Pixels[0] = 123
+	require.Equal(t, byte(123), i1.Pixels[i1.PixelByte(5, 6)])
+	require.Equal(t, byte(123), i2.Pixels[i2.PixelByte(0, 0)])
+	SaveJPEG(t, i1, "test/crop1.jpg")
+	SaveJPEG(t, i2, "test/crop2.jpg")
+}
+
 // On my Skylake 6700K, I get 305ms for resizing 5184x3456 to 1200x800
 func BenchmarkResizeRGBA(b *testing.B) {
 	w := 5184
