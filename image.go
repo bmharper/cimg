@@ -262,6 +262,7 @@ func (img *Image) NChan() int {
 	return NChan(img.Format)
 }
 
+// Read a JPEG, PNG, or TIFF file into memory
 func ReadFile(filename string) (*Image, error) {
 	raw, err := os.ReadFile(filename)
 	if err != nil {
@@ -278,6 +279,12 @@ func (img *Image) WriteJPEG(filename string, params CompressParams, perm os.File
 	return os.WriteFile(filename, raw, 0644)
 }
 
+// Returns the byte index of the pixel at (x, y)
 func (img *Image) PixelByte(x, y int) int {
 	return img.Stride*y + x*img.NChan()
+}
+
+// Returns true if the image is dense (i.e. the stride is equal to the width * number of channels)
+func (img *Image) IsDense() bool {
+	return img.Stride == img.Width*img.NChan()
 }

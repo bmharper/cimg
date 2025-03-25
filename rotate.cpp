@@ -8,39 +8,41 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
-// 180 degrees
+// Rotate image 180 degrees
 template <unsigned nchan>
-void Unrotate3(const uint8_t* src, unsigned width, unsigned height, int stride, uint8_t* dst) {
+void Rotate180(const uint8_t* src, unsigned width, unsigned height, int srcStride, uint8_t* dst, int dstStride) {
 	const uint8_t* pSrc = src;
 	uint8_t*       pDst = dst;
 	for (unsigned y = 0; y < height; y++) {
-		pSrc = (const uint8_t*) src + (height - 1 - y) * stride + (width - 1) * nchan;
+		pSrc = (const uint8_t*) src + (height - 1 - y) * srcStride + (width - 1) * nchan;
 		for (unsigned x = 0; x < width; x++) {
 			for (unsigned i = 0; i < nchan; i++)
 				*pDst++ = *pSrc++;
-			pSrc -= nchan * 2;
+			pSrc -= nchan * 2; // pSrc has moved to the right by nchan, so move back 2*nchan bytes to move one to the left
 		}
+		pDst += dstStride - width * nchan;
 	}
 }
 
-// 90 degrees clockwise
+// Rotate image 90 degrees clockwise
 template <unsigned nchan>
-void Unrotate6(const uint8_t* src, unsigned width, unsigned height, int stride, uint8_t* dst) {
+void Rotate90CW(const uint8_t* src, unsigned width, unsigned height, int srcStride, uint8_t* dst, int dstStride) {
 	const uint8_t* pSrc = src;
 	uint8_t*       pDst = dst;
 	for (unsigned x = 0; x < width; x++) {
-		pSrc = (const uint8_t*) src + (height - 1) * stride + x * nchan;
+		pSrc = (const uint8_t*) src + (height - 1) * srcStride + x * nchan;
 		for (unsigned y = 0; y < height; y++) {
 			for (unsigned i = 0; i < nchan; i++)
 				*pDst++ = *pSrc++;
-			pSrc -= stride + nchan;
+			pSrc -= srcStride + nchan;
 		}
+		pDst += dstStride - height * nchan;
 	}
 }
 
-// 90 degrees counter-clockwise
+// Rotate image 90 degrees counter-clockwise
 template <unsigned nchan>
-void Unrotate8(const uint8_t* src, unsigned width, unsigned height, int stride, uint8_t* dst) {
+void Rotate90CCW(const uint8_t* src, unsigned width, unsigned height, int srcStride, uint8_t* dst, int dstStride) {
 	const uint8_t* pSrc = src;
 	uint8_t*       pDst = dst;
 	for (unsigned x = 0; x < width; x++) {
@@ -48,8 +50,9 @@ void Unrotate8(const uint8_t* src, unsigned width, unsigned height, int stride, 
 		for (unsigned y = 0; y < height; y++) {
 			for (unsigned i = 0; i < nchan; i++)
 				*pDst++ = *pSrc++;
-			pSrc += stride - nchan;
+			pSrc += srcStride - nchan;
 		}
+		pDst += dstStride - height * nchan;
 	}
 }
 
@@ -118,31 +121,34 @@ void Bilinear(
 
 extern "C" {
 
-void Unrotate(int exifOrientation, void* _src, int _width, int _height, int stride, int _nchan, void* _dst) {
+void RotateDiscrete(int angle, void* _src, int _width, int _height, int stride, int _nchan, void* _dst, int dstStride) {
 	const uint8_t* src    = (const uint8_t*) _src;
 	uint8_t*       dst    = (uint8_t*) _dst;
 	unsigned       width  = _width;
 	unsigned       height = _height;
-	switch (exifOrientation) {
-	case 3:
+	switch (angle) {
+	case -180:
+	case 180:
 		switch (_nchan) {
-		case 1: Unrotate3<1>(src, width, height, stride, dst); break;
-		case 3: Unrotate3<3>(src, width, height, stride, dst); break;
-		case 4: Unrotate3<4>(src, width, height, stride, dst); break;
+		case 1: Rotate180<1>(src, width, height, stride, dst, dstStride); break;
+		case 3: Rotate180<3>(src, width, height, stride, dst, dstStride); break;
+		case 4: Rotate180<4>(src, width, height, stride, dst, dstStride); break;
 		}
 		break;
-	case 6:
+	case 90:
+	case -270:
 		switch (_nchan) {
-		case 1: Unrotate6<1>(src, width, height, stride, dst); break;
-		case 3: Unrotate6<3>(src, width, height, stride, dst); break;
-		case 4: Unrotate6<4>(src, width, height, stride, dst); break;
+		case 1: Rotate90CW<1>(src, width, height, stride, dst, dstStride); break;
+		case 3: Rotate90CW<3>(src, width, height, stride, dst, dstStride); break;
+		case 4: Rotate90CW<4>(src, width, height, stride, dst, dstStride); break;
 		}
 		break;
-	case 8:
+	case -90:
+	case 270:
 		switch (_nchan) {
-		case 1: Unrotate8<1>(src, width, height, stride, dst); break;
-		case 3: Unrotate8<3>(src, width, height, stride, dst); break;
-		case 4: Unrotate8<4>(src, width, height, stride, dst); break;
+		case 1: Rotate90CCW<1>(src, width, height, stride, dst, dstStride); break;
+		case 3: Rotate90CCW<3>(src, width, height, stride, dst, dstStride); break;
+		case 4: Rotate90CCW<4>(src, width, height, stride, dst, dstStride); break;
 		}
 		break;
 	}
@@ -193,5 +199,16 @@ void RotateImageBilinear(
 			}
 		}
 	}
+}
+
+void UnrotateExif(int exifOrientation, void* _src, int _width, int _height, int stride, int _nchan, void* _dst, int dstStride) {
+	int angle = 0;
+	switch (exifOrientation) {
+	case 1: angle = 0; break;
+	case 3: angle = 180; break;
+	case 6: angle = 90; break;
+	case 8: angle = -90; break;
+	}
+	RotateDiscrete(angle, _src, _width, _height, stride, _nchan, _dst, dstStride);
 }
 }
