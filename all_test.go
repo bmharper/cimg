@@ -367,6 +367,16 @@ func TestCrop(t *testing.T) {
 	SaveJPEG(t, i2, "test/crop2.jpg")
 }
 
+func TestDrawRect(t *testing.T) {
+	i1 := MakeRGB(97, 123)
+	i1.DrawRectangle(10, 20, 50, 80, 255, 0, 0)        // Red rectangle
+	i1.DrawRectangle(20, 30, 60, 90, 0, 255, 0)        // Green rectangle
+	i1.DrawRectangle(30, 40, 70, 100, 0, 0, 255)       // Blue rectangle
+	i1.DrawRectangle(-5, -5, 15, 18, 250, 250, 250)    // crop top-left
+	i1.DrawRectangle(80, 100, 120, 150, 250, 250, 250) // crop bottom-right
+	SaveJPEG(t, i1, "test/drawrect.jpg")
+}
+
 // On my Skylake 6700K, I get 305ms for resizing 5184x3456 to 1200x800
 func BenchmarkResizeRGBA(b *testing.B) {
 	w := 5184

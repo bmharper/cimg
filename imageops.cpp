@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <turbojpeg.h>
+#include <algorithm>
 #include "imageops.h"
 
 // Jim Blinn's perfect unsigned byte multiply
@@ -260,6 +261,108 @@ void Premultiply(void* src, int width, int height, int stride, int format) {
 			break;
 		default:
 			return;
+		}
+	}
+}
+
+void DrawHorizontalLine(uint8_t* src, int stride, int nchan, uint8_t c1, uint8_t c2, uint8_t c3, int y, int xs, int xe) {
+	uint8_t* row = src + static_cast<size_t>(y) * stride;
+	if (nchan == 1) {
+		uint8_t* p = row + static_cast<size_t>(xs) * 1;
+		for (int x = xs; x < xe; ++x) {
+			*p = c1;
+			p += 1;
+		}
+	} else if (nchan == 3) {
+		uint8_t* p = row + static_cast<size_t>(xs) * 3;
+		for (int x = xs; x < xe; ++x) {
+			p[0] = c1;
+			p[1] = c2;
+			p[2] = c3;
+			p += 3;
+		}
+	} else if (nchan == 4) {
+		uint8_t* p = row + static_cast<size_t>(xs) * 4;
+		for (int x = xs; x < xe; ++x) {
+			p[0] = c1;
+			p[1] = c2;
+			p[2] = c3;
+			p[3] = 255;
+			p += 4;
+		}
+	}
+}
+
+void DrawVerticalLine(uint8_t* src, int stride, int nchan, uint8_t c1, uint8_t c2, uint8_t c3, int x, int ys, int ye) {
+	uint8_t* col = src + static_cast<size_t>(x) * nchan;
+	if (nchan == 1) {
+		uint8_t* p = col + static_cast<size_t>(ys) * stride;
+		for (int y = ys; y < ye; ++y) {
+			*p = c1;
+			p += stride;
+		}
+	} else if (nchan == 3) {
+		uint8_t* p = col + static_cast<size_t>(ys) * stride;
+		for (int y = ys; y < ye; ++y) {
+			p[0] = c1;
+			p[1] = c2;
+			p[2] = c3;
+			p += stride;
+		}
+	} else if (nchan == 4) {
+		uint8_t* p = col + static_cast<size_t>(ys) * stride;
+		for (int y = ys; y < ye; ++y) {
+			p[0] = c1;
+			p[1] = c2;
+			p[2] = c3;
+			p[3] = 255;
+			p += stride;
+		}
+	}
+}
+
+void DrawRect(void* _src, int _width, int _height, int _stride, int _nchan, uint8_t c1, uint8_t c2, uint8_t c3, int x1, int y1, int x2, int y2) {
+	if (x1 >= x2 || y1 >= y2)
+		return;
+	auto src = (uint8_t*) _src;
+
+	// Top line
+	int yy = y1;
+	if (yy >= 0 && yy < _height) {
+		int xs = std::max(x1, 0);
+		int xe = std::min(x2, _width);
+		if (xs < xe) {
+			DrawHorizontalLine(src, _stride, _nchan, c1, c2, c3, yy, xs, xe);
+		}
+	}
+
+	// Bottom line
+	yy = y2 - 1;
+	if (yy >= 0 && yy < _height) {
+		int xs = std::max(x1, 0);
+		int xe = std::min(x2, _width);
+		if (xs < xe) {
+			DrawHorizontalLine(src, _stride, _nchan, c1, c2, c3, yy, xs, xe);
+		}
+	}
+
+	// Left line
+	int xx = x1;
+	if (xx >= 0 && xx < _width) {
+		int ys = std::max(y1, 0);
+		int ye = std::min(y2, _height);
+		if (ys < ye) {
+			DrawVerticalLine(src, _stride, _nchan, c1, c2, c3, xx, ys, ye);
+		}
+	}
+
+	// Right line
+	xx = x2 - 1;
+	if (xx >= 0 && xx < _width) {
+		int ys = std::max(y1, 0);
+		int ye = std::min(y2, _height);
+		if (ys < ye) {
+			DrawVerticalLine(src, _stride, _nchan, c1, c2, c3, xx, ys, ye);
 		}
 	}
 }

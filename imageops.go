@@ -134,3 +134,9 @@ func (img *Image) Premultiply() {
 	C.Premultiply(unsafe.Pointer(&img.Pixels[0]), C.int(img.Width), C.int(img.Height), C.int(img.Stride), C.int(img.Format))
 	img.Premultiplied = true
 }
+
+// Draw a rectangle.
+func (img *Image) DrawRectangle(x1, y1, x2, y2 int, r, g, b uint8) {
+	// TODO: swizzle r,g,b if pixel format is not RGB
+	C.DrawRect(unsafe.Pointer(&img.Pixels[0]), C.int(img.Width), C.int(img.Height), C.int(img.Stride), C.int(img.NChan()), C.uint8_t(r), C.uint8_t(g), C.uint8_t(b), C.int(x1), C.int(y1), C.int(x2), C.int(y2))
+}
